@@ -1,0 +1,158 @@
+name: Epistemic Guard - CI/CD
+
+# PURPOSE: Automated testing to enforce Constitutional compliance
+# TRIGGER: On every push to main branch and pull requests
+# RESULT: Tests must pass or build is blocked
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  epistemic-guard:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+    
+    steps:
+    # ==========================================================================
+    # STEP 1: CHECKOUT CODE
+    # ==========================================================================
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    # ==========================================================================
+    # STEP 2: SETUP PYTHON ENVIRONMENT
+    # ==========================================================================
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    # ==========================================================================
+    # STEP 3: CACHE DEPENDENCIES (Speed up builds)
+    # ==========================================================================
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    # ==========================================================================
+    # STEP 4: INSTALL DEPENDENCIES
+    # ==========================================================================
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    # ==========================================================================
+    # STEP 5: RUN EPISTEMIC GUARD (TEST SUITE)
+    # ==========================================================================
+    - name: Run Epistemic Guard (Constitutional Tests)
+      run: |
+        echo "=============================================="
+        echo "EPISTEMIC GUARD - CONSTITUTIONAL VALIDATION"
+        echo "=============================================="
+        echo ""
+        echo "Testing Three Invariants:"
+        echo "  I.   Labeling (Provenance)"
+        echo "  II.  Reference (Relative Motion)"
+        echo "  III. Access (Truth Slider)"
+        echo ""
+        pytest tests/ -v --tb=short
+    
+    # ==========================================================================
+    # STEP 6: GENERATE COVERAGE REPORT (Optional)
+    # ==========================================================================
+    - name: Generate coverage report
+      if: matrix.python-version == '3.10'
+      run: |
+        pytest tests/ --cov=src --cov-report=xml --cov-report=term
+    
+    # ==========================================================================
+    # STEP 7: UPLOAD COVERAGE TO CODECOV (Optional)
+    # ==========================================================================
+    - name: Upload coverage to Codecov
+      if: matrix.python-version == '3.10'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+    
+    # ==========================================================================
+    # STEP 8: SUCCESS MESSAGE
+    # ==========================================================================
+    - name: Epistemic Standard Verified
+      if: success()
+      run: |
+        echo ""
+        echo "=============================================="
+        echo "✅ EPISTEMIC STANDARD VERIFIED"
+        echo "=============================================="
+        echo ""
+        echo "All Constitutional invariants enforced:"
+        echo "  ✓ No unlabeled data"
+        echo "  ✓ No absolute coordinates"
+        echo "  ✓ Truth Slider maintains structure"
+        echo ""
+        echo "The Constitution is upheld! 🛡️"
+        echo ""
+    
+    # ==========================================================================
+    # STEP 9: FAILURE MESSAGE
+    # ==========================================================================
+    - name: Constitutional Violation Detected
+      if: failure()
+      run: |
+        echo ""
+        echo "=============================================="
+        echo "✗ CONSTITUTIONAL VIOLATION DETECTED"
+        echo "=============================================="
+        echo ""
+        echo "One or more invariants violated."
+        echo "Review test output above for details."
+        echo ""
+        echo "The Constitution must be upheld!"
+        echo ""
+        exit 1
+
+
+  # ===========================================================================
+  # STATIC ANALYSIS (OPTIONAL)
+  # ===========================================================================
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install linting tools
+      run: |
+        pip install flake8 black
+    
+    - name: Run flake8
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 src/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 src/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      continue-on-error: true
+    
+    - name: Check code formatting with black
+      run: |
+        black --check src/ tests/ || echo "Code formatting issues detected (non-blocking)"
+      continue-on-error: true

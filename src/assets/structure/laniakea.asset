@@ -1,0 +1,301 @@
+-- laniakea.asset
+-- OpenSpace Asset: Laniakea Supercluster (L1 - INFERRED)
+--
+-- EPISTEMIC STATUS: L1 (INFERRED)
+-- SOURCE: Tully et al. 2014 (Nature 513, 71–73)
+-- DOI: 10.1038/nature13674
+-- COLOR: Gold (#FFD700) - INFERRED data
+--
+-- PURPOSE: Fill the "Empty Middle" per Constitution's Empty Middle Policy
+-- CONTEXT: Laniakea contains ~100,000 galaxies including Milky Way
+--          Diameter: ~520 million light-years (160 Mpc)
+--          Flow velocity: ~630 km/s toward Great Attractor
+--
+-- CONSTITUTION COMPLIANCE:
+-- - Empty Middle Policy: Fills gap with INFERRED data (not procedural decoration)
+-- - Invariant I (Labeling): All objects tagged L1_INFERRED
+-- - Invariant III (Access): Visible only at Truth Level 2+
+
+local asset = asset or {}
+
+-- Data file paths
+local laniakeaDataPath = asset.syncedResource({
+    Name = "Laniakea Supercluster Data",
+    Type = "HttpSynchronization",
+    Identifier = "epistemic_laniakea",
+    Version = 1
+})
+
+
+-- =============================================================================
+-- LANIAKEA GALAXY DISTRIBUTION (L1 - INFERRED)
+-- =============================================================================
+
+local LaniakeaGalaxies = {
+    Identifier = "LaniakeaGalaxies",
+    Parent = "Root",  -- Cosmic-scale structure
+    
+    -- Epistemic tagging
+    Tag = { "L1_INFERRED", "laniakea", "cosmic_web" },
+    
+    Transform = {
+        Translation = {
+            Type = "StaticTranslation",
+            Position = {0, 0, 0}  -- Centered on Milky Way
+        }
+    },
+    
+    Renderable = {
+        Type = "RenderablePointCloud",
+        Enabled = true,
+        
+        -- Load galaxy distribution
+        File = laniakeaDataPath .. "laniakea_galaxies.speck",
+        
+        -- Data variable mapping
+        -- datavar 0 = colorb_v (epistemic color: 0.5 = INFERRED)
+        DataMapping = {
+            Color = {
+                Type = "Variable",
+                Variable = 0,  -- colorb_v
+                -- Gold color map for INFERRED data
+                ColorMap = {
+                    {0.0, {0.3, 0.2, 0.0}},  -- Dark gold
+                    {0.5, {1.0, 0.84, 0.0}}, -- Gold (#FFD700 - INFERRED)
+                    {1.0, {1.0, 1.0, 0.7}}   -- Bright gold
+                }
+            }
+        },
+        
+        -- Visual properties
+        Opacity = 0.8,
+        SizeComposition = "Distance",
+        
+        -- Sizing
+        MaxSize = 50.0,
+        MinSize = 2.0,
+        
+        -- Rendering
+        DrawElements = true,
+        UseAdditiveBlending = true
+    },
+    
+    GUI = {
+        Name = "Laniakea Galaxies (L1 - INFERRED)",
+        Path = "/Epistemic Engine/Cosmic Structure",
+        Description = "~5,000 galaxies distributed along cosmic web filaments. Based on Tully et al. 2014 topology."
+    }
+}
+
+
+-- =============================================================================
+-- LANIAKEA FLOW LINES (L1 - INFERRED)
+-- =============================================================================
+
+local LaniakeaFlows = {
+    Identifier = "LaniakeaFlowLines",
+    Parent = "Root",
+    
+    Tag = { "L1_INFERRED", "laniakea", "velocity_flows" },
+    
+    Transform = {
+        Translation = {
+            Type = "StaticTranslation",
+            Position = {0, 0, 0}
+        }
+    },
+    
+    Renderable = {
+        Type = "RenderableConstellationLines",  -- Line renderer
+        Enabled = true,
+        
+        -- Load flow vector data
+        File = laniakeaDataPath .. "laniakea_flows.speck",
+        
+        -- Visual properties
+        Color = {0.67, 0.53, 0.0},  -- Darker gold (#AA8800)
+        Opacity = 0.5,  -- Subtle
+        LineWidth = 2.0,
+        
+        -- Rendering
+        DrawElements = true,
+        UseAdditiveBlending = true
+    },
+    
+    GUI = {
+        Name = "Laniakea Flow Vectors (L1 - INFERRED)",
+        Path = "/Epistemic Engine/Cosmic Structure",
+        Description = "Velocity flow lines showing gravitational infall toward attractors. Primary: Great Attractor."
+    }
+}
+
+
+-- =============================================================================
+-- GREAT ATTRACTOR LABEL (Wiki Integration)
+-- =============================================================================
+
+local GreatAttractorLabel = {
+    Identifier = "GreatAttractorLabel",
+    Parent = "Root",
+    
+    Tag = { "L1_INFERRED", "wiki_label" },
+    
+    Transform = {
+        Translation = {
+            Type = "StaticTranslation",
+            -- Position of Great Attractor (60 Mpc in Norma direction)
+            -- Converted to meters: 60 Mpc * 3.0857e22 m/Mpc
+            Position = {1.85142e24, 0, 0}  -- 60 Mpc along X-axis (approx)
+        }
+    },
+    
+    Renderable = {
+        Type = "RenderableLabel",
+        Enabled = true,
+        
+        Text = "Great Attractor\n(Gravitational Focus)",
+        FontSize = 24,
+        Color = {1.0, 0.84, 0.0},  -- Gold
+        Size = 1e23,  -- Label size in meters
+        MinMaxSize = {10, 100},  -- Screen-space size limits
+        
+        Billboard = true,  -- Always face camera
+        BlendMode = "Additive"
+    },
+    
+    GUI = {
+        Name = "Great Attractor Label",
+        Path = "/Epistemic Engine/Wiki/Laniakea"
+    }
+}
+
+
+-- =============================================================================
+-- VIRGO CLUSTER LABEL
+-- =============================================================================
+
+local VirgoLabel = {
+    Identifier = "VirgoClusterLabel",
+    Parent = "Root",
+    
+    Tag = { "L1_INFERRED", "wiki_label" },
+    
+    Transform = {
+        Translation = {
+            Type = "StaticTranslation",
+            -- Virgo Cluster: 16.5 Mpc from Milky Way
+            Position = {5.09141e23, 0, 0}  -- 16.5 Mpc
+        }
+    },
+    
+    Renderable = {
+        Type = "RenderableLabel",
+        Enabled = true,
+        
+        Text = "Virgo Cluster\n(Local Supercluster Core)",
+        FontSize = 20,
+        Color = {1.0, 0.84, 0.0},
+        Size = 5e22,
+        MinMaxSize = {8, 80},
+        
+        Billboard = true,
+        BlendMode = "Additive"
+    },
+    
+    GUI = {
+        Name = "Virgo Cluster Label",
+        Path = "/Epistemic Engine/Wiki/Laniakea"
+    }
+}
+
+
+-- =============================================================================
+-- LANIAKEA BOUNDARY MARKER (Visual Reference)
+-- =============================================================================
+
+local LaniakeaBoundary = {
+    Identifier = "LaniakeaBoundary",
+    Parent = "Root",
+    
+    Tag = { "L1_INFERRED", "reference" },
+    
+    Transform = {
+        Translation = {
+            Type = "StaticTranslation",
+            Position = {0, 0, 0}
+        }
+    },
+    
+    Renderable = {
+        Type = "RenderableSphereImageLocal",
+        Enabled = false,  -- Disabled by default, user can enable
+        
+        Size = 2.47e24,  -- 80 Mpc radius → 160 Mpc diameter
+        Segments = 64,
+        Opacity = 0.1,
+        Color = {1.0, 0.84, 0.0},  -- Gold
+        
+        Orientation = "Both"
+    },
+    
+    GUI = {
+        Name = "Laniakea Boundary (Reference)",
+        Path = "/Epistemic Engine/Cosmic Structure",
+        Description = "~160 Mpc diameter ellipsoidal region. Enable to visualize Laniakea extent."
+    }
+}
+
+
+-- =============================================================================
+-- ASSET LIFECYCLE
+-- =============================================================================
+
+asset.onInitialize(function()
+    openspace.addSceneGraphNode(LaniakeaGalaxies)
+    openspace.addSceneGraphNode(LaniakeaFlowLines)
+    openspace.addSceneGraphNode(GreatAttractorLabel)
+    openspace.addSceneGraphNode(VirgoLabel)
+    openspace.addSceneGraphNode(LaniakeaBoundary)
+    
+    openspace.printInfo("Loaded Laniakea Supercluster (L1 - INFERRED)")
+    openspace.printInfo("  Galaxies: ~5,000 along cosmic filaments")
+    openspace.printInfo("  Flow vectors: toward Great Attractor")
+    openspace.printInfo("  Source: Tully et al. 2014 (DOI: 10.1038/nature13674)")
+end)
+
+asset.onDeinitialize(function()
+    openspace.removeSceneGraphNode(LaniakeaBoundary)
+    openspace.removeSceneGraphNode(VirgoLabel)
+    openspace.removeSceneGraphNode(GreatAttractorLabel)
+    openspace.removeSceneGraphNode(LaniakeaFlowLines)
+    openspace.removeSceneGraphNode(LaniakeaGalaxies)
+end)
+
+asset.export(LaniakeaGalaxies)
+asset.export(LaniakeaFlowLines)
+asset.export(GreatAttractorLabel)
+asset.export(VirgoLabel)
+asset.export(LaniakeaBoundary)
+
+
+-- =============================================================================
+-- CONSTITUTION NOTES
+-- =============================================================================
+--
+-- EMPTY MIDDLE POLICY COMPLIANCE:
+-- ✓ Fills gap between stars (Gaia, parsec scale) and CMB (Gpc scale)
+-- ✓ Uses INFERRED data (not procedural decoration)
+-- ✓ Based on scientific source (Tully et al. 2014)
+-- ✓ Gold color coding per Constitution Layer 3
+--
+-- TRUTH SLIDER INTEGRATION:
+-- - Visible at Level 2 (INFERRED) and Level 3 (SIMULATED)
+-- - Tagged as L1_INFERRED for filtering
+-- - Dashboard should toggle visibility based on truth_level
+--
+-- WIKI SYSTEM (Narrative):
+-- - Labels provide context on focus
+-- - Great Attractor: Primary gravitational attractor
+-- - Virgo Cluster: Local Supercluster core
+--
+-- =============================================================================

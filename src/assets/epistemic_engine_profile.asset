@@ -1,0 +1,111 @@
+-- epistemic_engine_profile.asset
+-- OpenSpace Master Profile for Epistemic Engine
+--
+-- PURPOSE: Main entry point that loads all Epistemic Engine components
+-- COMBINES: Phase 1 (Kinematics) + Phase 2 (Gaia Data) + Phase 3 (Truth Slider UI)
+--
+-- USAGE: Load this profile in OpenSpace:
+--   openspace --profile epistemic_engine_profile
+
+local asset = asset or {}
+
+
+-- =============================================================================
+-- PHASE 1: THE ANCHOR (KINEMATICS)
+-- =============================================================================
+
+asset.require('./intro_scene')  -- Sun's orbit, Earth's helix, CMB vector
+
+
+-- =============================================================================
+-- PHASE 2: THE TRUTH (GAIA DATA)
+-- =============================================================================
+
+asset.require('./gaia_stars')  -- L0 OBSERVED star data from Gaia DR3
+
+
+-- =============================================================================
+-- PHASE 4: THE GAP (LANIAKEA)
+-- =============================================================================
+
+asset.require('./structure/laniakea')  -- L1 INFERRED cosmic web structure
+
+
+-- =============================================================================
+-- PHASE 3: THE INTERACTION (UX)
+-- =============================================================================
+
+asset.require('./ui/epistemic_dashboard')      -- HUD + Truth Level Controller
+asset.require('./ui/epistemic_keybindings')    -- Keyboard controls (1/2/3)
+
+
+-- =============================================================================
+-- INITIALIZATION
+-- =============================================================================
+
+asset.onInitialize(function()
+    openspace.printInfo("")
+    openspace.printInfo("========================================")
+    openspace.printInfo("EPISTEMIC ENGINE v1.0")
+    openspace.printInfo("========================================")
+    openspace.printInfo("")
+    openspace.printInfo("CONSTITUTION COMPLIANCE:")
+    openspace.printInfo("  ✓ Invariant I: All data labeled (OBSERVED/INFERRED/SIMULATED)")
+    openspace.printInfo("  ✓ Invariant II: Relative motion (Earth → Sun → Galaxy)")
+    openspace.printInfo("  ✓ Invariant III: Truth Slider active (keys 1/2/3)")
+    openspace.printInfo("")
+    openspace.printInfo("CONTROLS:")
+    openspace.printInfo("  1 = OBSERVED (Blue) - Pure Measurement")
+    openspace.printInfo("  2 = INFERRED (Gold) - Scientific Model")
+    openspace.printInfo("  3 = SIMULATED (Red) - Hypothetical")
+    openspace.printInfo("  H = Show keybinding help")
+    openspace.printInfo("")
+    openspace.printInfo("LOADED COMPONENTS:")
+    openspace.printInfo("  Phase 1: Sun's Galactic Orbit (L1)")
+    openspace.printInfo("  Phase 1: CMB Velocity Vector (L2)")
+    openspace.printInfo("  Phase 1: Earth's Heliocentric Orbit (L0)")
+    openspace.printInfo("  Phase 2: Gaia DR3 Stars (L0)")
+    openspace.printInfo("  Phase 3: Truth Slider Dashboard")
+    openspace.printInfo("")
+    openspace.printInfo("DATA SOURCES:")
+    openspace.printInfo("  - Gaia DR3 (DOI: 10.1051/0004-6361/202243940)")
+    openspace.printInfo("  - JPL Horizons (SPICE)")
+    openspace.printInfo("  - Galactic Dynamics Models")
+    openspace.printInfo("  - Planck 2018 CMB Measurements")
+    openspace.printInfo("")
+    openspace.printInfo("Starting in OBSERVED mode (L0 only)...")
+    openspace.printInfo("========================================")
+    openspace.printInfo("")
+end)
+
+
+asset.onDeinitialize(function()
+    openspace.printInfo("Epistemic Engine profile unloaded")
+end)
+
+
+asset.export("EpistemicEngine", asset)
+
+
+-- =============================================================================
+-- CONSTITUTION NOTES
+-- =============================================================================
+--
+-- This profile enforces all Three Invariants:
+--
+-- I. LABELING (Provenance):
+--    - All assets tagged with L0/L1/L2
+--    - Database enforces truth_label NOT NULL
+--    - Provenance JSONB includes source DOI
+--
+-- II. REFERENCE (Relative Motion):
+--    - Earth → Sun (helical path)
+--    - Sun → Galaxy (oscillating path)
+--    - Galaxy → CMB (velocity vector)
+--
+-- III. ACCESS (User Interface):
+--    - Truth Slider always shows active mode
+--    - Keybindings provide direct control
+--    - Layers toggle explicitly (no blending)
+--
+-- =============================================================================

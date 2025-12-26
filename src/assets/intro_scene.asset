@@ -1,0 +1,397 @@
+-- intro_scene.asset
+-- OpenSpace Asset: The Epistemic Engine - Phase 1 Introduction
+--
+-- INVARIANT COMPLIANCE:
+-- - Labeling: All objects tagged with epistemic_status
+-- - Reference: Hierarchical parent-child relationships (Earth -> Sun -> Galaxy)
+-- - Access: Users can toggle layers via Truth Slider (Phase 3)
+--
+-- SCENE DESCRIPTION:
+-- This scene establishes the nested coordinate system showing:
+-- 1. Sun's galactic orbit (Gold/L1 - INFERRED)
+-- 2. Earth's heliocentric orbit (Blue/L0 - OBSERVED, attached to Sun)
+-- 3. CMB velocity vector (Red/L2 - SIMULATED visual aid)
+
+local assetHelper = asset.require('util/asset_helper')
+local transforms = asset.require('scene/solarsystem/sun/transforms')
+
+-- Data file paths (relative to asset location)
+local sunOrbitPath = asset.syncedResource({
+    Name = "Sun Galactic Orbit Data",
+    Type = "HttpSynchronization",
+    Identifier = "epistemic_sun_orbit",
+    Version = 1
+})
+
+local cmbArrowPath = asset.syncedResource({
+    Name = "CMB Velocity Arrow Mesh",
+    Type = "HttpSynchronization", 
+    Identifier = "epistemic_cmb_arrow",
+    Version = 1
+})
+
+
+-- =============================================================================
+-- GALACTIC CENTER (Reference Frame)
+-- =============================================================================
+-- This is the parent frame for the Sun's motion
+
+local GalacticCenter = {
+    Identifier = "GalacticCenter",
+    Parent = "Root", -- Ultimately relative to "Root" (scene origin)
+    
+    Transform = {
+        Translation = {
+            Type = "StaticTranslation",
+            Position = {0, 0, 0} -- Place at origin for now
+        }
+    },
+    
+    Renderable = {
+        Type = "RenderableGlobe",
+        Enabled = false, -- Invisible marker
+        Radii = {1e15, 1e15, 1e15} -- Tiny placeholder
+    },
+    
+    GUI = {
+        Name = "Galactic Center",
+        Path = "/Epistemic Engine/Reference Frames"
+    }
+}
+
+
+-- =============================================================================
+-- SUN'S GALACTIC ORBIT PATH (L1 - INFERRED)
+-- =============================================================================
+-- Helical path showing Sun's motion relative to Galactic Center
+-- COLOR: Gold (#FFD700) - Inferred from galactic dynamics models
+
+local SunGalacticOrbitTrail = {
+    Identifier = "SunGalacticOrbitTrail",
+    Parent = "GalacticCenter",
+    
+    -- Mark epistemic status
+    Tag = { "L1_INFERRED" },
+    
+    Renderable = {
+        Type = "RenderableTrailTrajectory",
+        Enabled = true,
+        
+        -- Load trajectory data
+        Translation = {
+            Type = "SpiceTranslation",
+            Target = "SUN",
+            Observer = "GALACTIC CENTER",
+            Frame = "GALACTIC"
+        },
+        
+        -- Alternative: Use generated data file
+        -- File = sunOrbitPath .. "sun_galactic_orbit.speck",
+        
+        -- Visual properties
+        Color = {1.0, 0.84, 0.0}, -- Gold (L1 - INFERRED)
+        LineWidth = 3.0,
+        Rendering = "Lines",
+        
+        -- Show one full galactic orbit (230 million years)
+        StartTime = "2000 JAN 01 00:00:00",
+        EndTime = "+230000000 years" -- 230 Myr future
+    },
+    
+    GUI = {
+        Name = "Sun's Galactic Orbit (L1 - INFERRED)",
+        Path = "/Epistemic Engine/Kinematics",
+        Description = "Sun's inferred helical path around the Galactic Center. Period: 230 Myr, Vertical oscillation: 60 Myr, Amplitude: 400 pc."
+    }
+}
+
+
+-- =============================================================================
+-- SUN (Moving Reference Frame)
+-- =============================================================================
+-- The Sun moves along the galactic orbit path
+-- This becomes the reference frame for Earth
+
+local SunInGalaxy = {
+    Identifier = "SunInGalaxy",
+    Parent = "GalacticCenter", -- Moves relative to Galactic Center
+    
+    Transform = {
+        Translation = {
+            Type = "SpiceTranslation",
+            Target = "SUN",
+            Observer = "GALACTIC CENTER",
+            Frame = "GALACTIC"
+        },
+        Rotation = {
+            Type = "SpiceRotation",
+            SourceFrame = "IAU_SUN",
+            DestinationFrame = "GALACTIC"
+        }
+    },
+    
+    Renderable = {
+        Type = "RenderableGlobe",
+        Enabled = true,
+        
+        -- Sun properties
+        Radii = {695700000, 695700000, 695700000}, -- 695,700 km
+        
+        -- Epistemic status: L0 (Sun's existence is OBSERVED)
+        Tag = { "L0_OBSERVED" },
+        
+        -- Visual
+        PerformShading = false,
+        Opacity = 1.0,
+        
+        Layers = {
+            ColorLayers = {
+                {
+                    Identifier = "SunTexture",
+                    FilePath = "default_sun_texture.jpg", -- Placeholder
+                    Enabled = true
+                }
+            }
+        }
+    },
+    
+    GUI = {
+        Name = "Sun",
+        Path = "/Epistemic Engine/Solar System"
+    }
+}
+
+
+-- =============================================================================
+-- EARTH'S HELIOCENTRIC ORBIT (L0 - OBSERVED)
+-- =============================================================================
+-- Earth's orbit relative to the Sun (creates helical path in galactic frame)
+-- COLOR: Blue/White - Observed data from JPL Horizons (SPICE)
+
+local EarthHeliocentricTrail = {
+    Identifier = "EarthHeliocentricTrail",
+    Parent = "SunInGalaxy", -- CRITICAL: Attached to moving Sun frame
+    
+    Tag = { "L0_OBSERVED" },
+    
+    Renderable = {
+        Type = "RenderableTrailTrajectory",
+        Enabled = true,
+        
+        Translation = {
+            Type = "SpiceTranslation",
+            Target = "EARTH",
+            Observer = "SUN", -- Relative to Sun
+            Frame = "ECLIPJ2000"
+        },
+        
+        -- Visual properties
+        Color = {0.27, 0.51, 1.0}, -- Blue (L0 - OBSERVED)
+        LineWidth = 2.0,
+        Rendering = "Lines",
+        
+        -- Show 10 years of Earth's orbit
+        StartTime = "2000 JAN 01 00:00:00",
+        EndTime = "+10 years"
+    },
+    
+    GUI = {
+        Name = "Earth's Heliocentric Orbit (L0 - OBSERVED)",
+        Path = "/Epistemic Engine/Solar System",
+        Description = "Earth's orbit around the Sun from JPL Horizons. Because it's attached to the moving Sun, it traces a HELIX in the galactic frame."
+    }
+}
+
+
+-- =============================================================================
+-- EARTH (Moving with the Sun)
+-- =============================================================================
+
+local EarthInSolarSystem = {
+    Identifier = "EarthInSolarSystem",
+    Parent = "SunInGalaxy", -- Moves relative to Sun
+    
+    Transform = {
+        Translation = {
+            Type = "SpiceTranslation",
+            Target = "EARTH",
+            Observer = "SUN",
+            Frame = "ECLIPJ2000"
+        },
+        Rotation = {
+            Type = "SpiceRotation",
+            SourceFrame = "IAU_EARTH",
+            DestinationFrame = "GALACTIC"
+        }
+    },
+    
+    Renderable = {
+        Type = "RenderableGlobe",
+        Enabled = true,
+        Radii = {6371000, 6371000, 6371000}, -- 6,371 km
+        
+        Tag = { "L0_OBSERVED" },
+        
+        PerformShading = true,
+        Layers = {}
+    },
+    
+    GUI = {
+        Name = "Earth",
+        Path = "/Epistemic Engine/Solar System"
+    }
+}
+
+
+-- =============================================================================
+-- CMB VELOCITY VECTOR (L2 - SIMULATED)
+-- =============================================================================
+-- Arrow showing Milky Way's motion relative to CMB rest frame
+-- COLOR: Red (#FF4444) - Simulated visual aid (velocity is L0, arrow is L2)
+
+local CMBVelocityArrow = {
+    Identifier = "CMBVelocityArrow",
+    Parent = "GalacticCenter",
+    
+    Tag = { "L2_SIMULATED" },
+    
+    Transform = {
+        Translation = {
+            Type = "StaticTranslation",
+            Position = {0, 0, 0} -- Positioned at galactic center
+        },
+        Rotation = {
+            Type = "StaticRotation",
+            Rotation = {0, 0, 0, 1} -- Direction embedded in mesh
+        }
+    },
+    
+    Renderable = {
+        Type = "RenderableModel",
+        Enabled = true,
+        
+        -- Load arrow mesh
+        GeometryFile = cmbArrowPath .. "cmb_velocity_arrow.obj",
+        
+        -- Visual properties
+        LightSources = {}, -- Unlit (always visible)
+        PerformShading = false,
+        DisableFaceCulling = true,
+        
+        -- Ambient color: Red for L2
+        AmbientIntensity = 0.5,
+        DiffuseIntensity = 0.0,
+        SpecularIntensity = 0.0,
+        
+        -- Force red color
+        ModelTransform = {
+            Scale = {1.0, 1.0, 1.0}
+        }
+    },
+    
+    GUI = {
+        Name = "CMB Velocity Vector (L2 - SIMULATED)",
+        Path = "/Epistemic Engine/Cosmology",
+        Description = "Arrow representing Milky Way's motion (369 km/s towards Leo) relative to CMB. NOTE: Velocity is L0 (OBSERVED), but arrow mesh is L2 (SIMULATED visual aid)."
+    }
+}
+
+
+-- =============================================================================
+-- TEXT LABELS (Scale Annotations)
+-- =============================================================================
+
+local VerticalOscillationLabel = {
+    Identifier = "VerticalOscillationLabel",
+    Parent = "SunGalacticOrbitTrail",
+    
+    Renderable = {
+        Type = "RenderableLabel",
+        Enabled = true,
+        Text = "Vertical Oscillation: ±400 parsecs (~1,300 light-years)",
+        FontSize = 20,
+        Color = {1.0, 0.84, 0.0}, -- Gold to match orbit
+        Position = {0, 4e18, 0}, -- Position above galactic plane
+        Billboard = true
+    },
+    
+    GUI = {
+        Name = "Oscillation Label",
+        Path = "/Epistemic Engine/Labels"
+    }
+}
+
+local OrbitalPeriodLabel = {
+    Identifier = "OrbitalPeriodLabel",
+    Parent = "SunGalacticOrbitTrail",
+    
+    Renderable = {
+        Type = "RenderableLabel",
+        Enabled = true,
+        Text = "Orbital Period: 230 Million Years (1 Galactic Year)",
+        FontSize = 20,
+        Color = {1.0, 0.84, 0.0},
+        Position = {8.5e19, 0, 0}, -- Position at orbital radius
+        Billboard = true
+    },
+    
+    GUI = {
+        Name = "Period Label",
+        Path = "/Epistemic Engine/Labels"
+    }
+}
+
+
+-- =============================================================================
+-- ASSET EXPORT
+-- =============================================================================
+
+asset.onInitialize(function()
+    openspace.addSceneGraphNode(GalacticCenter)
+    openspace.addSceneGraphNode(SunGalacticOrbitTrail)
+    openspace.addSceneGraphNode(SunInGalaxy)
+    openspace.addSceneGraphNode(EarthHeliocentricTrail)
+    openspace.addSceneGraphNode(EarthInSolarSystem)
+    openspace.addSceneGraphNode(CMBVelocityArrow)
+    openspace.addSceneGraphNode(VerticalOscillationLabel)
+    openspace.addSceneGraphNode(OrbitalPeriodLabel)
+end)
+
+asset.onDeinitialize(function()
+    openspace.removeSceneGraphNode(OrbitalPeriodLabel)
+    openspace.removeSceneGraphNode(VerticalOscillationLabel)
+    openspace.removeSceneGraphNode(CMBVelocityArrow)
+    openspace.removeSceneGraphNode(EarthInSolarSystem)
+    openspace.removeSceneGraphNode(EarthHeliocentricTrail)
+    openspace.removeSceneGraphNode(SunInGalaxy)
+    openspace.removeSceneGraphNode(SunGalacticOrbitTrail)
+    openspace.removeSceneGraphNode(GalacticCenter)
+end)
+
+asset.export(GalacticCenter)
+asset.export(SunGalacticOrbitTrail)
+asset.export(SunInGalaxy)
+asset.export(EarthHeliocentricTrail)
+asset.export(EarthInSolarSystem)
+asset.export(CMBVelocityArrow)
+asset.export(VerticalOscillationLabel)
+asset.export(OrbitalPeriodLabel)
+
+
+-- =============================================================================
+-- EPISTEMIC STATUS SUMMARY
+-- =============================================================================
+--
+-- L0 (OBSERVED - Blue/White):
+--   - Earth's position and orbit (JPL Horizons/SPICE)
+--   - Sun's existence
+--   - CMB velocity magnitude (369 km/s) [represented by L2 arrow]
+--
+-- L1 (INFERRED - Gold):
+--   - Sun's galactic orbit path (from galactic dynamics models)
+--   - Vertical oscillation amplitude and period
+--
+-- L2 (SIMULATED - Red):
+--   - CMB velocity arrow mesh (visual aid for L0 velocity data)
+--
+-- =============================================================================

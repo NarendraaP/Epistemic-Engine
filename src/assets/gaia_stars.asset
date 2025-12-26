@@ -1,0 +1,154 @@
+-- gaia_stars.asset
+-- OpenSpace Asset: Gaia DR3 OBSERVED Stars (L0)
+--
+-- EPISTEMIC STATUS: L0 (OBSERVED)
+-- SOURCE: Gaia DR3 via ESA TAP service
+-- COLOR: White/Blue (Constitution Layer 3)
+--
+-- INVARIANT COMPLIANCE:
+-- - Invariant I (Labeling): All stars from truth_label='OBSERVED'
+-- - Invariant II (Reference): Cartesian coords from spherical conversion
+-- - Invariant III (Access): Visible only when Truth Slider shows L0 layer
+--
+-- PREREQUISITES:
+-- 1. Database must be populated: python src/ingestion/ingest_gaia.py
+-- 2. Data must be exported: python src/ingestion/export_to_speck.py
+
+local transforms = asset.require('scene/solarsystem/sun/transforms')
+
+-- Data file path
+local gaiaDataPath = asset.syncedResource({
+    Name = "Gaia DR3 Observed Stars",
+    Type = "HttpSynchronization",
+    Identifier = "epistemic_gaia_observed",
+    Version = 1
+})
+
+
+-- =============================================================================
+-- GAIA DR3 STARS (L0 - OBSERVED)
+-- =============================================================================
+
+local GaiaStars = {
+    Identifier = "GaiaStarsObserved",
+    Parent = "SolarSystemBarycenter",  -- Stars are fixed relative to solar system
+    
+    -- Epistemic tagging
+    Tag = { "L0_OBSERVED", "gaia_stars" },
+    
+    Renderable = {
+        Type = "RenderablePointCloud",
+        Enabled = true,
+        
+        -- Load data file
+        File = gaiaDataPath .. "gaia_observed.speck",
+        
+        -- Data variable mappings
+        -- datavar 0 = colorb_v (epistemic color)
+        -- datavar 1 = lum (magnitude-based luminosity)
+        DataMapping = {
+            -- Color based on epistemic status
+            Color = {
+                Type = "Variable",
+                Variable = 0,  -- colorb_v
+                -- OBSERVED stars: White/Blue
+                ColorMap = {
+                    {0.0, {0.3, 0.3, 0.5}},  -- Dark blue (background)
+                    {0.5, {0.5, 0.7, 1.0}},  -- Light blue (medium)  
+                    {1.0, {1.0, 1.0, 1.0}}   -- White (OBSERVED)
+                }
+            },
+            
+            -- Size based on magnitude (luminosity)
+            Size = {
+                Type = "Variable",
+                Variable = 1,  -- lum
+                ScaleFactor = 5.0  -- Adjust for visibility
+            }
+        },
+        
+        -- Visual properties
+        Opacity = 0.9,
+        SizeComposition = "Distance",  -- Size scales with distance
+        
+        -- Performance
+        MaxSize = 100.0,
+        MinSize = 0.5,
+        
+        -- Rendering mode
+        DrawElements = true,
+        UseAdditiveBlending = true
+    },
+    
+    GUI = {
+        Name = "Gaia DR3 Stars (L0 - OBSERVED)",
+        Path = "/Epistemic Engine/Observed Data",
+        Description = "100,000 brightest stars from Gaia DR3. All measurements include parallax error margins (Constitution Invariant I)."
+    }
+}
+
+
+-- =============================================================================
+-- LEGEND PANEL (On-Screen Display)
+-- =============================================================================
+
+local ObservedLegend = {
+    Identifier = "ObservedLegend",
+    
+    Renderable = {
+        Type = "RenderableLabel",
+        Enabled = true,
+        Text = "● White/Blue: OBSERVED (Gaia DR3)",
+        FontSize = 18,
+        Color = {1.0, 1.0, 1.0},
+        Position = {0, 0, 0},  -- Screen space positioning via GUI
+        Billboard = false
+    },
+    
+    GUI = {
+        Name = "Observed Data Legend",
+        Path = "/Epistemic Engine/UI"
+    }
+}
+
+
+-- =============================================================================
+-- ASSET EXPORT
+-- =============================================================================
+
+asset.onInitialize(function()
+    openspace.addSceneGraphNode(GaiaStars)
+    openspace.addSceneGraphNode(ObservedLegend)
+    
+    -- Print confirmation
+    openspace.printInfo("Loaded Gaia DR3 OBSERVED stars (L0)")
+end)
+
+asset.onDeinitialize(function()
+    openspace.removeSceneGraphNode(ObservedLegend)
+    openspace.removeSceneGraphNode(GaiaStars)
+end)
+
+asset.export(GaiaStars)
+asset.export(ObservedLegend)
+
+
+-- =============================================================================
+-- EPISTEMIC STATUS NOTES
+-- =============================================================================
+--
+-- OBSERVED (L0):
+--   - Source: Gaia DR3 (ESA mission)
+--   - DOI: 10.1051/0004-6361/202243940
+--   - Error margins: All stars include parallax_error
+--   - Adjudication: Python validation script enforces provenance
+--
+-- COLOR CODING (Constitution Layer 3):
+--   - White (#FFFFFF): High-quality OBSERVED data
+--   - Blue (#4488FF): OBSERVED data (alternative)
+--
+-- TRUTH SLIDER INTEGRATION (Phase 3):
+--   - Layer will be toggled via Tag filtering
+--   - Keybinding: "1" = L0 only, "2" = L0+L1, "3" = L0+L1+L2
+--
+-- =============================================================================

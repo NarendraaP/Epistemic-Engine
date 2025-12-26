@@ -1,0 +1,197 @@
+# Epistemic Engine - Git Ignore File
+# =====================================
+# Excludes generated files, temporary data, and sensitive information
+
+# =============================================================================
+# PYTHON
+# =============================================================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+
+# =============================================================================
+# EPISTEMIC ENGINE - GENERATED DATA FILES
+# =============================================================================
+
+# Text-based data exports (.speck files)
+*.speck
+
+# Binary octree files
+data/octree/
+*.bin
+
+# Generated orbit/vector data (can be regenerated)
+data/sun_orbit/*.csv
+data/cmb_vector/*.obj
+data/laniakea/*.speck
+data/laniakea/*.json
+
+# Keep directory structure but ignore contents
+data/*
+!data/.gitkeep
+
+
+# =============================================================================
+# DATABASE
+# =============================================================================
+
+# PostgreSQL dumps
+*.sql.gz
+*.dump
+
+# Database connection files (may contain passwords)
+.env
+.env.local
+.env.*.local
+database.ini
+db_config.yaml
+
+
+# =============================================================================
+# OPENSPACE
+# =============================================================================
+
+# OpenSpace cache/logs
+*.log
+OpenSpace.log
+
+# Temporary OpenSpace files
+.openspace/
+
+
+# =============================================================================
+# DOCUMENTATION BUILD ARTIFACTS
+# =============================================================================
+
+# Sphinx documentation
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# LaTeX
+*.aux
+*.out
+*.toc
+
+
+# =============================================================================
+# SYSTEM FILES
+# =============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+
+# =============================================================================
+# KEEP THESE (DO NOT IGNORE)
+# =============================================================================
+# Explicitly keep important files that might otherwise be ignored
+
+# Source code
+!src/**/*.py
+!src/**/*.sql
+!src/**/*.lua
+!src/**/*.asset
+
+# Documentation
+!docs/**/*.md
+
+# Tests
+!tests/**/*.py
+
+# Configuration
+!*.md
+!*.txt
+!*.ini
+!*.yml
+!*.yaml
+
+# Root configuration files
+!README.md
+!QUICKSTART.md
+!LICENSE
+!.gitignore
+!requirements.txt
+!pytest.ini
+!run_pipeline.py
+!push_updates.sh
+
+# Keep data directory structure
+!data/.gitkeep
+!data/sun_orbit/.gitkeep
+!data/cmb_vector/.gitkeep
+!data/laniakea/.gitkeep
+!data/octree/.gitkeep

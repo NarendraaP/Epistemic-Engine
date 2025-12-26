@@ -1,0 +1,17 @@
+# Epistemic Engine - Python Dependencies
+
+# Core scientific computing
+numpy>=1.21.0
+
+# Phase 2: Database & Gaia ingestion
+psycopg2-binary>=2.9.0    # PostgreSQL adapter
+astroquery>=0.4.6         # Gaia DR3 TAP queries
+astropy>=5.3.0            # Astronomy utilities
+
+# Future dependencies (uncomment when implementing later phases)
+# sqlalchemy>=2.0.0
+# geoalchemy2>=0.13.0
+
+# Testing (The Epistemic Guard)
+pytest>=7.4.0
+pytest-cov>=4.1.0  # For coverage reports

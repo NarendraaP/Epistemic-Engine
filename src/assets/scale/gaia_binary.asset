@@ -1,0 +1,365 @@
+-- gaia_binary.asset
+-- OpenSpace Asset: Binary Octree LOD System for Large Star Catalogs
+--
+-- PURPOSE: Handle millions of stars using Level-of-Detail (LOD) rendering
+-- REPLACES: Text-based .speck files (limited to ~1M stars)
+--
+-- ARCHITECTURE:
+-- - Binary octree structure on disk (depth-x-y-z.bin files)
+-- - Parent nodes: Brightest 10% of stars (for distant viewing)
+-- - Child nodes: Full detail (for close-up viewing)
+-- - Dynamic loading based on camera distance
+--
+-- BINARY FORMAT (.bin files):
+--     Header: int32 num_stars
+--     Body (per star):
+--         - float32 x, y, z (position in meters)
+--         - float32 magnitude
+--         - int32 epistemic_status (0=OBSERVED, 1=INFERRED, 2=SIMULATED)
+--
+-- LOD STRATEGY:
+-- - Camera far from node → Show parent (bright stars only)
+-- - Camera near node → Hide parent, show children (full detail)
+-- - Threshold distance: Adaptive based on node bounds
+
+local asset = asset or {}
+
+-- Data directory path
+local octreeDataPath = asset.syncedResource({
+    Name = "Binary Octree Star Data",
+    Type = "HttpSynchronization",
+    Identifier = "epistemic_octree",
+    Version = 1
+})
+
+
+-- =============================================================================
+-- LOD MANAGER (Dynamic Loading System)
+-- =============================================================================
+
+local LODManager = {
+    -- Configuration
+    MAX_DEPTH = 5,
+    LOD_DISTANCE_MULTIPLIER = 2.0,  -- Camera distance threshold multiplier
+    
+    -- State tracking
+    loaded_nodes = {},  -- Track which nodes are currently loaded
+    camera_position = {0, 0, 0},
+    
+    -- Performance settings
+    update_interval = 0.5,  -- Update LOD every 0.5 seconds
+    last_update_time = 0.0
+}
+
+function LODManager:initialize()
+    """Initialize the LOD manager system."""
+    
+    openspace.printInfo("Initializing Binary Octree LOD Manager...")
+    
+    -- Load root node (always visible)
+    self:load_node(0, {})  -- Depth 0, empty octant path
+    
+    openspace.printInfo("  Root node loaded")
+    openspace.printInfo("  LOD system active")
+end
+
+function LODManager:load_node(depth, octant_path)
+    """
+    Load a binary octree node.
+    
+    Args:
+        depth (int): Depth in octree
+        octant_path (table): Path to node (e.g., {0, 3, 7})
+    
+    This function would ideally use a custom C++ binary reader.
+    For this Lua implementation, we demonstrate the concept.
+    """
+    
+    -- Generate node identifier
+    local node_id
+    if depth == 0 then
+        node_id = "Octree_0-0-0-0"
+    else
+        local path_str = table.concat(octant_path, "-")
+        node_id = "Octree_" .. depth .. "-" .. path_str
+    end
+    
+    -- Check if already loaded
+    if self.loaded_nodes[node_id] then
+        return
+    end
+    
+    -- Generate filename
+    local filename
+    if depth == 0 then
+        filename = "0-0-0-0.bin"
+    else
+        local path_str = table.concat(octant_path, "-")
+        filename = depth .. "-" .. path_str .. ".bin"
+    end
+    
+    local file_path = octreeDataPath .. filename
+    
+    -- NOTE: In production, this would use a custom C++ RenderableBinaryPointCloud
+    -- For now, we use a placeholder approach
+    
+    -- Create a scene graph node for this octree node
+    local node_def = {
+        Identifier = node_id,
+        Parent = "Root",
+        Tag = { "octree_node", "L0_OBSERVED" },
+        
+        Renderable = {
+            Type = "RenderablePointCloud",
+            Enabled = true,
+            
+            -- In production: Use custom binary reader here
+            -- File = file_path,
+            -- Format = "BinaryOctree",
+            
+            -- For demonstration: Placeholder
+            -- Actual implementation requires C++ extension or
+            -- pre-conversion of .bin to .speck for each node
+            
+            Opacity = 1.0,
+            SizeComposition = "Distance"
+        },
+        
+        GUI = {
+            Name = "Octree Node " .. node_id,
+            Path = "/Epistemic Engine/Binary Octree/Nodes"
+        }
+    }
+    
+    -- Add to scene (placeholder - would need actual binary loading)
+    -- openspace.addSceneGraphNode(node_def)
+    
+    -- Mark as loaded
+    self.loaded_nodes[node_id] = {
+        depth = depth,
+        octant_path = octant_path,
+        enabled = true
+    }
+    
+    openspace.printDebug("Loaded octree node: " .. node_id)
+end
+
+function LODManager:unload_node(depth, octant_path)
+    """
+    Unload an octree node to free memory.
+    
+    Args:
+        depth (int): Depth in octree
+        octant_path (table): Path to node
+    """
+    
+    local node_id
+    if depth == 0 then
+        node_id = "Octree_0-0-0-0"
+    else
+        local path_str = table.concat(octant_path, "-")
+        node_id = "Octree_" .. depth .. "-" .. path_str
+    end
+    
+    if not self.loaded_nodes[node_id] then
+        return
+    end
+    
+    -- Remove from scene
+    -- openspace.removeSceneGraphNode(node_id)
+    
+    -- Mark as unloaded
+    self.loaded_nodes[node_id] = nil
+    
+    openspace.printDebug("Unloaded octree node: " .. node_id)
+end
+
+function LODManager:update_lod(camera_pos)
+    """
+    Update LOD based on camera position.
+    
+    This function determines which octree nodes should be visible
+    based on camera distance.
+    
+    Args:
+        camera_pos (table): Camera position {x, y, z}
+    
+    LOD Logic:
+        - Calculate distance from camera to each node's bounding box
+        - If distance < threshold: Load children, hide parent
+        - If distance > threshold: Show parent, unload children
+    """
+    
+    self.camera_position = camera_pos
+    
+    -- Traverse octree and update visibility
+    -- This is a simplified version - production would use spatial queries
+    
+    for node_id, node_data in pairs(self.loaded_nodes) do
+        local depth = node_data.depth
+        local octant_path = node_data.octant_path
+        
+        -- Calculate distance to node (simplified - would use actual bounds)
+        local distance = self:calculate_distance_to_node(camera_pos, depth, octant_path)
+        
+        -- LOD threshold (larger for deeper nodes)
+        local threshold = self:calculate_lod_threshold(depth)
+        
+        -- Check if we should split to children
+        if distance < threshold and depth < self.MAX_DEPTH then
+            -- Load children
+            for octant = 0, 7 do
+                local child_path = {}
+                for i, v in ipairs(octant_path) do
+                    child_path[i] = v
+                end
+                table.insert(child_path, octant)
+                
+                self:load_node(depth + 1, child_path)
+            end
+            
+            -- Disable parent (children will show full detail)
+            self:set_node_enabled(node_id, false)
+        else
+            -- Enable parent (too far for children)
+            self:set_node_enabled(node_id, true)
+        end
+    end
+end
+
+function LODManager:calculate_distance_to_node(camera_pos, depth, octant_path)
+    """
+    Calculate distance from camera to octree node.
+    
+    This is a simplified placeholder - production would calculate
+    distance to node's actual bounding box.
+    """
+    
+    -- Placeholder: Use depth as proxy for distance threshold
+    -- In production, calculate actual distance to node bounds
+    return 1e20 / (2 ^ depth)  -- Exponential decrease with depth
+end
+
+function LODManager:calculate_lod_threshold(depth)
+    """
+    Calculate LOD threshold distance for a given depth.
+    
+    Deeper nodes have smaller thresholds (need to be closer to show children).
+    """
+    
+    local base_threshold = 1e21  -- Base distance (parsecs → meters scale)
+    return base_threshold / (2 ^ depth) * self.LOD_DISTANCE_MULTIPLIER
+end
+
+function LODManager:set_node_enabled(node_id, enabled)
+    """
+    Enable or disable an octree node.
+    
+    Args:
+        node_id (string): Node identifier
+        enabled (bool): Whether to enable rendering
+    """
+    
+    if not self.loaded_nodes[node_id] then
+        return
+    end
+    
+    local property_path = "Scene." .. node_id .. ".Renderable.Enabled"
+    
+    if openspace.hasProperty(property_path) then
+        openspace.setPropertyValueSingle(property_path, enabled)
+        self.loaded_nodes[node_id].enabled = enabled
+    end
+end
+
+
+-- =============================================================================
+-- UPDATE LOOP (Called by OpenSpace)
+-- =============================================================================
+
+local function update_callback(delta_time)
+    """
+    Called every frame by OpenSpace.
+    
+    Args:
+        delta_time (float): Time since last frame (seconds)
+    """
+    
+    LODManager.last_update_time = LODManager.last_update_time + delta_time
+    
+    -- Update LOD only at intervals (performance)
+    if LODManager.last_update_time >= LODManager.update_interval then
+        LODManager.last_update_time = 0.0
+        
+        -- Get camera position
+        local camera_pos = openspace.navigationHandler.camera().worldPosition()
+        
+        -- Update LOD
+        LODManager:update_lod(camera_pos)
+    end
+end
+
+
+-- =============================================================================
+-- ASSET LIFECYCLE
+-- =============================================================================
+
+asset.onInitialize(function()
+    LODManager:initialize()
+    
+    -- Register update callback
+    openspace.addScreenSpaceRenderable({
+        Type = "ScreenSpaceRenderable",
+        Name = "OctreeLODUpdate",
+        OnRender = update_callback
+    })
+    
+    openspace.printInfo("Binary Octree LOD System initialized")
+    openspace.printInfo("  Max depth: " .. LODManager.MAX_DEPTH)
+    openspace.printInfo("  Update interval: " .. LODManager.update_interval .. "s")
+end)
+
+asset.onDeinitialize(function()
+    -- Unload all nodes
+    for node_id, _ in pairs(LODManager.loaded_nodes) do
+        local node_data = LODManager.loaded_nodes[node_id]
+        LODManager:unload_node(node_data.depth, node_data.octant_path)
+    end
+    
+    openspace.printInfo("Binary Octree LOD System deactivated")
+end)
+
+asset.export("LODManager", LODManager)
+
+
+-- =============================================================================
+-- IMPLEMENTATION NOTES
+-- =============================================================================
+--
+-- CURRENT STATUS: Conceptual demonstration
+--
+-- PRODUCTION REQUIREMENTS:
+-- 1. Custom C++ RenderableBinaryPointCloud class
+--    - Reads binary .bin files directly
+--    - Parses struct-packed star data
+--    - Renders as GPU point primitives
+--
+-- 2. Binary File Reader
+--    - fread() int32 header (num_stars)
+--    - fread() array of (float32 x3 + float32 + int32) per star
+--    - Upload to GPU vertex buffer
+--
+-- 3. Spatial Queries
+--    - Calculate actual distance to node bounding boxes
+--    - Frustum culling (don't load nodes outside view)
+--
+-- 4. Memory Management
+--    - Unload distant nodes to free VRAM
+--    - Priority queue for loading (closest first)
+--
+-- ALTERNATIVE APPROACH (If C++ not available):
+-- - Pre-convert each .bin file to .speck during export
+-- - Use standard RenderablePointCloud with file swapping
+-- - Less efficient but works with existing OpenSpace
+--
+-- =============================================================================

@@ -1,0 +1,114 @@
+-- epistemic_keybindings.asset
+-- OpenSpace Asset: Keybinding Configuration for Epistemic Engine
+--
+-- PURPOSE: Bind keyboard controls to Truth Slider functionality
+-- LOADS: epistemic_dashboard.lua and sets up user controls
+--
+-- USAGE: Include this asset in your OpenSpace profile to enable keybindings
+
+local asset = asset or {}
+
+-- Load the epistemic dashboard
+local dashboard = asset.require('./epistemic_dashboard')
+
+
+-- =============================================================================
+-- KEYBINDING CONFIGURATION
+-- =============================================================================
+
+asset.onInitialize(function()
+    openspace.printInfo("Setting up Epistemic Engine keybindings...")
+    
+    -- ==========================================================================
+    -- TRUTH SLIDER CONTROLS
+    -- ==========================================================================
+    
+    -- Key '1': OBSERVED mode (L0 only)
+    openspace.bindKey(
+        "1",
+        [[
+            local dashboard = require('epistemic_dashboard')
+            dashboard.set_truth_level(1)
+        ]],
+        {
+            Documentation = "Epistemic Mode: OBSERVED (L0) - Pure Measurement",
+            Name = "Truth Level 1: OBSERVED",
+            GuiPath = "/Epistemic Engine",
+            Synchronization = false
+        }
+    )
+    
+    -- Key '2': INFERRED mode (L0 + L1)
+    openspace.bindKey(
+        "2",
+        [[
+            local dashboard = require('epistemic_dashboard')
+            dashboard.set_truth_level(2)
+        ]],
+        {
+            Documentation = "Epistemic Mode: INFERRED (L0 + L1) - Scientific Model",
+            Name = "Truth Level 2: INFERRED",
+            GuiPath = "/Epistemic Engine",
+            Synchronization = false
+        }
+    )
+    
+    -- Key '3': SIMULATED mode (L0 + L1 + L2, all layers)
+    openspace.bindKey(
+        "3",
+        [[
+            local dashboard = require('epistemic_dashboard')
+            dashboard.set_truth_level(3)
+        ]],
+        {
+            Documentation = "Epistemic Mode: SIMULATED (All layers) - Hypothetical",
+            Name = "Truth Level 3: SIMULATED",
+            GuiPath = "/Epistemic Engine",
+            Synchronization = false
+        }
+    )
+    
+    
+    -- ==========================================================================
+    -- HELPER KEYBINDINGS
+    -- ==========================================================================
+    
+    -- Key 'H': Display help (print keybinding info to console)
+    openspace.bindKey(
+        "H",
+        [[
+            openspace.printInfo("========================================")
+            openspace.printInfo("EPISTEMIC ENGINE - KEYBINDINGS")
+            openspace.printInfo("========================================")
+            openspace.printInfo("1 = OBSERVED (Blue) - Pure Measurement")
+            openspace.printInfo("2 = INFERRED (Gold) - Scientific Model")
+            openspace.printInfo("3 = SIMULATED (Red) - Hypothetical")
+            openspace.printInfo("H = Show this help")
+            openspace.printInfo("========================================")
+        ]],
+        {
+            Documentation = "Display Epistemic Engine keybinding help",
+            Name = "Show Epistemic Keybindings",
+            GuiPath = "/Epistemic Engine",
+            Synchronization = false
+        }
+    )
+    
+    openspace.printInfo("✓ Epistemic Engine keybindings activated")
+    openspace.printInfo("  Press '1', '2', or '3' to change truth level")
+    openspace.printInfo("  Press 'H' for help")
+end)
+
+
+asset.onDeinitialize(function()
+    -- Unbind keys on shutdown
+    openspace.clearKey("1")
+    openspace.clearKey("2")
+    openspace.clearKey("3")
+    openspace.clearKey("H")
+    
+    openspace.printInfo("Epistemic Engine keybindings deactivated")
+end)
+
+
+asset.export("dashboard", dashboard)
