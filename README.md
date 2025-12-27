@@ -185,7 +185,7 @@ CMB (root)
 
 ## 📜 License
 
-*(To be determined)*
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
 ---
 
@@ -201,7 +201,10 @@ CMB (root)
 
 ## 📧 Contact
 
-*(To be added)*
+* **Narendra Polisetti** - *Project Lead*
+* 📧 Email: narendraa1996@gmail.com
+* 💼 LinkedIn: [Narendra Polisetti](https://www.linkedin.com/in/narendra-polisetti/)
+* 🐙 GitHub: [NarendraaP](https://github.com/NarendraaP)
 
 ---
 
