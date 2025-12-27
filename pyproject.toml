@@ -1,0 +1,102 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "epistemic-engine"
+version = "1.0.0"
+description = "A visualization framework enforcing epistemological provenance in cosmological data"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "MIT"}
+authors = [
+    {name = "NarendraaP", email = "your.email@example.com"}
+]
+keywords = ["astronomy", "visualization", "epistemic", "provenance", "openspace", "gaia"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+
+dependencies = [
+    "numpy>=1.16.0,<1.22.0",
+    "psycopg2-binary>=2.8.0",
+    "astroquery>=0.4.1,<0.4.8",
+    "astropy>=4.0,<5.0",
+    "pytest>=6.0.0",
+    "pytest-cov>=2.10.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "flake8>=6.0.0",
+    "black>=23.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/NarendraaP/Epistemic-Engine"
+Documentation = "https://github.com/NarendraaP/Epistemic-Engine#readme"
+Repository = "https://github.com/NarendraaP/Epistemic-Engine"
+Issues = "https://github.com/NarendraaP/Epistemic-Engine/issues"
+
+[project.scripts]
+epistemic-run = "run_pipeline:main"
+epistemic-pipeline = "run_pipeline:main"
+
+[tool.setuptools]
+packages = ["src", "src.ingestion", "src.db", "src.assets"]
+
+[tool.setuptools.package-data]
+"src.assets" = ["**/*"]
+"src.db" = ["*.sql"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "tests/*",
+    "**/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
